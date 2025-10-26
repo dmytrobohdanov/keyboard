@@ -27,7 +27,9 @@ import android.util.Log
 import androidx.core.os.UserManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.caching.InputType
 import dev.patrickgold.florisboard.ime.caching.TemporaryCacher
+import dev.patrickgold.florisboard.ime.caching.contacts.getAllContactDetails
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
@@ -48,6 +50,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.tryOrNull
 import org.florisboard.libnative.dummyAdd
@@ -124,9 +127,22 @@ class FlorisApplication : Application() {
             Log.i("PREFS", result.toString())
             preferenceStoreLoaded.value = true
         }
+
         extensionManager.value.init()
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
+        saveContacts()
+    }
+
+    private fun saveContacts(){
+        Log.d("piing", "saveContacts: ")
+        scope.launch(Dispatchers.Default) {
+            val contacts = getAllContactDetails(this@FlorisApplication)
+
+            withContext(Dispatchers.Main){
+                temporaryCacher.value.writeToCache(contacts.toString(), InputType.CONTACTS)
+            }
+        }
     }
 
     private inner class BootComplete : BroadcastReceiver() {

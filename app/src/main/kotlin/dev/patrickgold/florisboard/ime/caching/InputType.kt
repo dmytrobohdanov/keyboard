@@ -4,4 +4,5 @@ enum class InputType {
     COPIED,
     TEXT,
     LOCATION,
+    CONTACTS,
 }
