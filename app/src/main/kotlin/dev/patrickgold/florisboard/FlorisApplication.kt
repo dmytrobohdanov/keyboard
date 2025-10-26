@@ -83,8 +83,11 @@ class FlorisApplication : Application() {
     val subtypeManager = lazy { SubtypeManager(this) }
     val themeManager = lazy { ThemeManager(this) }
 
+
+
     override fun onCreate() {
         super.onCreate()
+        Log.d("piing", "FlorisApplication onCreate called")
         FlorisApplicationReference = WeakReference(this)
         try {
             Flog.install(

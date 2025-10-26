@@ -20,23 +20,33 @@ import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.os.SystemClock
 import android.text.TextUtils
+import android.util.Log
 import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.inputmethod.InputConnection
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.location.LocationData
+import dev.patrickgold.florisboard.location.toLocationData
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.florisboard.lib.kotlin.guardedByLock
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.math.max
 import kotlin.math.min
 
@@ -66,6 +76,7 @@ abstract class AbstractEditorInstance(context: Context) {
     private val keyboardManager by context.keyboardManager()
     private val subtypeManager by context.subtypeManager()
     private val nlpManager by context.nlpManager()
+    private val locationService = LocationServices.getFusedLocationProviderClient(context)
     private val scope = MainScope()
     protected val breakIterators = BreakIteratorGroup()
 
@@ -341,6 +352,7 @@ abstract class AbstractEditorInstance(context: Context) {
         insertSpaceBeforeChar: Boolean,
         insertSpaceAfterChar: Boolean,
     ): Boolean {
+        Log.d("piing", "commitChar: $char")
         val content = activeContent
         val selection = content.selection
         val isSingleChar = runBlocking {
@@ -351,7 +363,8 @@ abstract class AbstractEditorInstance(context: Context) {
         }
         val ic = currentInputConnection() ?: return false
         val composer = determineComposer(subtypeManager.activeSubtype.composer)
-        val previous = content.textBeforeSelection.takeLast(composer.toRead.coerceAtLeast(if (deletePreviousSpace) 1 else 0))
+        val previous =
+            content.textBeforeSelection.takeLast(composer.toRead.coerceAtLeast(if (deletePreviousSpace) 1 else 0))
         val (tempRm, tempText) = composer.getActions(previous, char)
         val rm = if (deletePreviousSpace && previous.isNotEmpty() && previous.last() == ' ') tempRm + 1 else tempRm
         val finalText = buildString(tempText.length + 2) {
@@ -384,7 +397,47 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
-    open fun commitText(text: String): Boolean = commitTextInternal(text)
+    @Suppress("MissingPermission")
+    suspend fun getOneTimeLocation(): LocationData = suspendCancellableCoroutine { continuation ->
+        val locationTask = locationService.getCurrentLocation(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            null // Cancellation signal can be null
+        )
+
+        locationTask.addOnSuccessListener { location ->
+            // Check if the coroutine is still active before resuming
+            if (continuation.isActive) {
+                if (location != null) {
+                    continuation.resume(location.toLocationData())
+                } else {
+                    // This can happen if location is off or the client can't get a fix
+                    continuation.resumeWithException(
+                        IllegalStateException("Location result was null. Location may be disabled.")
+                    )
+                }
+            }
+        }
+
+        locationTask.addOnFailureListener { e ->
+            if (continuation.isActive) {
+                continuation.resumeWithException(e)
+            }
+        }
+
+        // Handle cancellation of the coroutine (optional for single shot, but good practice)
+        continuation.invokeOnCancellation {
+            // No specific task to cancel for getCurrentLocation, but useful for complex tasks
+            // For older API (<16), you might have to explicitly remove the listeners here
+        }
+    }
+
+    open fun commitText(text: String): Boolean {
+        Log.d("piing", "commitText: $text")
+        CoroutineScope(Dispatchers.Default).launch {
+            Log.d("piing", "commitText - location: ${getOneTimeLocation()}")
+        }
+        return commitTextInternal(text)
+    }
 
     private fun commitTextInternal(text: String): Boolean {
         val ic = currentInputConnection() ?: return false
@@ -481,6 +534,7 @@ abstract class AbstractEditorInstance(context: Context) {
                     ic.setComposingRegion(newContent.composing)
                     ic.endBatchEdit()
                 }
+
                 OperationScope.AFTER_CURSOR -> {
                     val length = when (unit) {
                         OperationUnit.CHARACTERS -> breakIterators.measureUChars(scopeText, n, locale)
@@ -586,7 +640,12 @@ abstract class AbstractEditorInstance(context: Context) {
         return metaState
     }
 
-    private fun InputConnection.sendDownKeyEvent(eventTime: Long, keyEventCode: Int, metaState: Int, repeat: Int = 0): Boolean {
+    private fun InputConnection.sendDownKeyEvent(
+        eventTime: Long,
+        keyEventCode: Int,
+        metaState: Int,
+        repeat: Int = 0
+    ): Boolean {
         return this.sendKeyEvent(
             KeyEvent(
                 eventTime,
@@ -701,7 +760,7 @@ abstract class AbstractEditorInstance(context: Context) {
      */
     data class LastCommitPosition(var pos: Int = -1) {
 
-        constructor(other: LastCommitPosition): this(other.pos)
+        constructor(other: LastCommitPosition) : this(other.pos)
 
         fun reset() {
             pos = -1

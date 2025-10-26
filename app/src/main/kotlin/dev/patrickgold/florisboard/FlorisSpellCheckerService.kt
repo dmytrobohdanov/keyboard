@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard
 
 import android.service.textservice.SpellCheckerService
+import android.util.Log
 import android.view.textservice.SentenceSuggestionsInfo
 import android.view.textservice.SuggestionsInfo
 import android.view.textservice.TextInfo
@@ -39,6 +40,7 @@ class FlorisSpellCheckerService : SpellCheckerService() {
     private val subtypeManager by subtypeManager()
 
     override fun onCreate() {
+        Log.d("piing", "FlorisSpellCheckerService onCreate called")
         flogInfo(LogTopic.SPELL_EVENTS)
 
         super.onCreate()
@@ -52,6 +54,8 @@ class FlorisSpellCheckerService : SpellCheckerService() {
     }
 
     override fun onDestroy() {
+        Log.d("piing", "FlorisSpellCheckerService onDestroy called")
+
         flogInfo(LogTopic.SPELL_EVENTS)
 
         super.onDestroy()

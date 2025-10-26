@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -85,7 +86,13 @@ class FlorisAppActivity : ComponentActivity() {
     private var resourcesContext by mutableStateOf(this as Context)
     private var intentToBeHandled by mutableStateOf<Intent?>(null)
 
+    override fun onStop() {
+        Log.d("piing", "FlorisAppActivity onStop called")
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("piing", "FlorisAppActivity onCreate called")
         // Splash screen should be installed before calling super.onCreate()
         installSplashScreen().apply {
             setKeepOnScreenCondition { !appContext.preferenceStoreLoaded.value }

@@ -221,6 +221,8 @@ dependencies {
     testImplementation(libs.kotlin.test.junit5)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.test.espresso.core)
+
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }
 
 fun getGitCommitHash(short: Boolean = false): String {
