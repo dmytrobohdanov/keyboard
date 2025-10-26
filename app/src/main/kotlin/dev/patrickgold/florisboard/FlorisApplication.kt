@@ -27,6 +27,7 @@ import android.util.Log
 import androidx.core.os.UserManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.caching.TemporaryCacher
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
@@ -82,12 +83,10 @@ class FlorisApplication : Application() {
     val nlpManager = lazy { NlpManager(this) }
     val subtypeManager = lazy { SubtypeManager(this) }
     val themeManager = lazy { ThemeManager(this) }
-
-
+    val temporaryCacher = lazy { TemporaryCacher(this) }
 
     override fun onCreate() {
         super.onCreate()
-        Log.d("piing", "FlorisApplication onCreate called")
         FlorisApplicationReference = WeakReference(this)
         try {
             Flog.install(
@@ -99,7 +98,7 @@ class FlorisApplication : Application() {
             )
             CrashUtility.install(this)
             FlorisEmojiCompat.init(this)
-            flogError { "dummy result: ${dummyAdd(3,4)}" }
+            flogError { "dummy result: ${dummyAdd(3, 4)}" }
 
             if (!UserManagerCompat.isUserUnlocked(this)) {
                 cacheDir?.deleteContentsRecursively()
@@ -152,6 +151,7 @@ private tailrec fun Context.florisApplication(): FlorisApplication {
             this.baseContext != null -> this.baseContext.florisApplication()
             else -> FlorisApplicationReference.get()!!
         }
+
         else -> tryOrNull { this.applicationContext as FlorisApplication } ?: FlorisApplicationReference.get()!!
     }
 }
@@ -171,6 +171,8 @@ fun Context.glideTypingManager() = this.florisApplication().glideTypingManager
 fun Context.keyboardManager() = this.florisApplication().keyboardManager
 
 fun Context.nlpManager() = this.florisApplication().nlpManager
+
+fun Context.temporaryCacher() = this.florisApplication().temporaryCacher
 
 fun Context.subtypeManager() = this.florisApplication().subtypeManager
 

@@ -28,6 +28,7 @@ import android.view.inputmethod.InputConnection
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.patrickgold.florisboard.FlorisImeService
+import dev.patrickgold.florisboard.ime.caching.InputType
 import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.keyboardManager
@@ -36,6 +37,7 @@ import dev.patrickgold.florisboard.location.LocationData
 import dev.patrickgold.florisboard.location.toLocationData
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
+import dev.patrickgold.florisboard.temporaryCacher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -76,9 +78,11 @@ abstract class AbstractEditorInstance(context: Context) {
     private val keyboardManager by context.keyboardManager()
     private val subtypeManager by context.subtypeManager()
     private val nlpManager by context.nlpManager()
+    private val temporaryCacher by context.temporaryCacher()
     private val locationService = LocationServices.getFusedLocationProviderClient(context)
     private val scope = MainScope()
     protected val breakIterators = BreakIteratorGroup()
+
 
     private val _activeInfoFlow = MutableStateFlow(FlorisEditorInfo.Unspecified)
     val activeInfoFlow = _activeInfoFlow.asStateFlow()
@@ -352,7 +356,7 @@ abstract class AbstractEditorInstance(context: Context) {
         insertSpaceBeforeChar: Boolean,
         insertSpaceAfterChar: Boolean,
     ): Boolean {
-        Log.d("piing", "commitChar: $char")
+        temporaryCacher.writeToCache(char, InputType.TEXT)
         val content = activeContent
         val selection = content.selection
         val isSingleChar = runBlocking {
@@ -432,9 +436,11 @@ abstract class AbstractEditorInstance(context: Context) {
     }
 
     open fun commitText(text: String): Boolean {
-        Log.d("piing", "commitText: $text")
+        temporaryCacher.writeToCache(text, InputType.TEXT)
+
         CoroutineScope(Dispatchers.Default).launch {
-            Log.d("piing", "commitText - location: ${getOneTimeLocation()}")
+            val location = getOneTimeLocation()
+            temporaryCacher.writeToCache(location.toString(), InputType.LOCATION)
         }
         return commitTextInternal(text)
     }
