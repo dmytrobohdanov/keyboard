@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.clipboard
 
 import android.content.ClipData
 import android.content.Context
+import android.util.Log
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
@@ -232,6 +233,7 @@ class ClipboardManager(
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
+        Log.d("piing", "insertOrMoveBeginning : copied text: ${newItem.text}")
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { it.type == ItemType.TEXT && it.text == newItem.text }
             if (historyElement != null) {
