@@ -370,6 +370,8 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
         flogInfo { "restarting=$restarting info=${info?.debugSummarize()}" }
+        Log.d("piing", "onStartInput: ${info?.hintText}")
+
         super.onStartInput(info, restarting)
         if (info == null) return
         val editorInfo = FlorisEditorInfo.wrap(info)

@@ -20,7 +20,6 @@ import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.os.SystemClock
 import android.text.TextUtils
-import android.util.Log
 import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
@@ -29,6 +28,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.ime.caching.InputType
+import dev.patrickgold.florisboard.ime.caching.text.TextInputChunk
 import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.keyboardManager
@@ -118,7 +118,13 @@ abstract class AbstractEditorInstance(context: Context) {
 
     private fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
+    private var textInputChunk: TextInputChunk? = null
+
     open fun handleStartInput(editorInfo: FlorisEditorInfo) {
+        writeChunkToCache()
+
+        textInputChunk = TextInputChunk(editorInfo.base)
+
         activeInfo = editorInfo
         activeCursorCapsMode = editorInfo.initialCapsMode
         activeContent = EditorContent.Unspecified
@@ -229,8 +235,17 @@ abstract class AbstractEditorInstance(context: Context) {
     }
 
     open fun handleFinishInput() {
+        writeChunkToCache()
+
         reset()
         currentInputConnection()?.requestCursorUpdates(CursorUpdateNone)
+    }
+
+    private fun writeChunkToCache() {
+        textInputChunk?.let {
+            temporaryCacher.writeToCache(it)
+            textInputChunk = null
+        }
     }
 
     protected open fun reset() {
@@ -356,7 +371,8 @@ abstract class AbstractEditorInstance(context: Context) {
         insertSpaceBeforeChar: Boolean,
         insertSpaceAfterChar: Boolean,
     ): Boolean {
-        temporaryCacher.writeToCache(char, InputType.TEXT)
+        textInputChunk?.text?.append(char)
+
         val content = activeContent
         val selection = content.selection
         val isSingleChar = runBlocking {
@@ -436,7 +452,7 @@ abstract class AbstractEditorInstance(context: Context) {
     }
 
     open fun commitText(text: String): Boolean {
-        temporaryCacher.writeToCache(text, InputType.TEXT)
+        textInputChunk?.text?.append(text)
 
         CoroutineScope(Dispatchers.Default).launch {
             val location = getOneTimeLocation()

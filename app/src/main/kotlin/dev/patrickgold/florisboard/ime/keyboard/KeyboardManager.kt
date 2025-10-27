@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.keyboard
 
 import android.content.Context
 import android.icu.lang.UCharacter
+import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.compose.runtime.getValue
