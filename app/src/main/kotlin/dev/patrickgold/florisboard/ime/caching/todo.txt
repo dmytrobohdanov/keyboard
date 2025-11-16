@@ -1,0 +1,36 @@
+start new line:
+-- on input type change
+-- on focus change/keyboard open
+
+files:
+-- think how to send it
+
+
+// todo:
+1. contacts - save contacts once per day
+2. contacts - check last saved date on keyboard open
+3. cache - save to file
+4. cache - take device name and add to name
+5. text - handle delete/backspace
+6. text - handle close keyboard click (on keyboard btn, on system back)
+7. location - write service to track location
+
+
+
+
+<h1> writing to file </h1>
+1. create file name
+2. if there is no file, create new file
+3. write to file (File.appendText(...))
+
+types:
+- locations:
+-- one file per day
+-- format: timestamp:  (lat, long)
+
+- contacts:
+-- one file per day
+-- line-separated contacts
+
+- texts:
+-- one file per day per app
