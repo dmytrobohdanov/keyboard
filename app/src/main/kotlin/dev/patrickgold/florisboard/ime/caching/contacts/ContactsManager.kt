@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.caching.contacts
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import android.provider.ContactsContract
 
 /**
@@ -37,7 +38,8 @@ fun getAllContactDetails(context: Context): List<ContactDetails> {
 
     val contactProjection = arrayOf(
         ContactsContract.Contacts._ID,
-        ContactsContract.Contacts.DISPLAY_NAME_PRIMARY
+        ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+        ContactsContract.Contacts.PHOTO_URI
     )
 
     // Query the main Contacts table
@@ -50,12 +52,15 @@ fun getAllContactDetails(context: Context): List<ContactDetails> {
     )?.use { cursor ->
         val idColumn = cursor.getColumnIndex(ContactsContract.Contacts._ID)
         val nameColumn = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+        val photoUriColumn = cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_URI)
 
         while (cursor.moveToNext()) {
             val id = cursor.getString(idColumn)
             val name = cursor.getString(nameColumn) ?: "No Name"
+            val photoUriString = cursor.getString(photoUriColumn)
+            val photoUri = if (photoUriString != null) Uri.parse(photoUriString) else null
             // Initialize the contact in our map
-            contactsMap[id] = MutableContact(id = id, name = name)
+            contactsMap[id] = MutableContact(id = id, name = name, photoUri = photoUri)
         }
     }
 
@@ -164,7 +169,8 @@ private data class MutableContact(
     val phones: MutableList<String> = mutableListOf(),
     val emails: MutableList<String> = mutableListOf(),
     val addresses: MutableList<String> = mutableListOf(),
-    var organization: String? = null
+    var organization: String? = null,
+    val photoUri: Uri? = null
 ) {
     /**
      * Converts the mutable builder object into the final immutable data class.
@@ -175,6 +181,7 @@ private data class MutableContact(
         phones = phones,
         emails = emails,
         addresses = addresses,
-        organization = organization
+        organization = organization,
+        photoUri = photoUri
     )
 }

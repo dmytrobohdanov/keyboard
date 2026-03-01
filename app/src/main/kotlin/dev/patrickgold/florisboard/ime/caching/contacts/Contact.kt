@@ -22,6 +22,7 @@ data class ContactDetails(
     val phones: List<String>,
     val emails: List<String>,
     val addresses: List<String>,
-    val organization: String?
+    val organization: String?,
+    val photoUri: android.net.Uri?,
 )
 
