@@ -199,6 +199,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.cache4k)
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.coroutines)
@@ -222,7 +223,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.test.espresso.core)
 
-    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation(libs.gms.play.services.location)
 }
 
 fun getGitCommitHash(short: Boolean = false): String {

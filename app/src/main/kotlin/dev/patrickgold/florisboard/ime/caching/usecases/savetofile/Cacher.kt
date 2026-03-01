@@ -23,7 +23,9 @@ import dev.patrickgold.florisboard.ime.caching.usecases.contacts.formatToOutput
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.models.ContactDetails
 import dev.patrickgold.florisboard.ime.caching.usecases.copied.formatToOutput
+import dev.patrickgold.florisboard.ime.caching.usecases.copied.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.input.formatToOutput
+import dev.patrickgold.florisboard.ime.caching.usecases.input.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.input.models.TextInputChunk
 import dev.patrickgold.florisboard.ime.caching.usecases.location.formatToOutput
 import dev.patrickgold.florisboard.ime.caching.usecases.location.getFileNameToStore
@@ -53,7 +55,7 @@ class Cacher(context: Context) {
     fun writeCopiedTextToCache(clipboardItem: ClipboardItem) {
         writeTextFileToCache(
             text = clipboardItem.formatToOutput(),
-            filename = TODO("add extended fun to get file name"),
+            filename = clipboardItem.getFileNameToStore(),
             overridingPolicy = OverridingPolicy.APPEND
         )
     }
@@ -61,7 +63,7 @@ class Cacher(context: Context) {
     fun writeInputTextToCache(textInputChunk: TextInputChunk) {
         writeTextFileToCache(
             text = textInputChunk.formatToOutput() ?: return,
-            filename = TODO("add extended fun to get file name"),
+            filename = textInputChunk.getFileNameToStore(),
             overridingPolicy = OverridingPolicy.APPEND
         )
     }

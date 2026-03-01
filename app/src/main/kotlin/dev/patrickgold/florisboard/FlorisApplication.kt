@@ -25,11 +25,16 @@ import android.content.IntentFilter
 import android.os.Handler
 import android.util.Log
 import androidx.core.os.UserManagerCompat
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getAllContactDetails
 import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationPoller
+import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationWorker
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
+import java.util.concurrent.TimeUnit
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
@@ -133,6 +138,16 @@ class FlorisApplication : Application() {
         DictionaryManager.init(this)
         saveContacts()
         LocationPoller(this, cacher.value).startPolling(scope)
+        scheduleLocationWorker()
+    }
+
+    private fun scheduleLocationWorker() {
+        val request = PeriodicWorkRequestBuilder<LocationWorker>(15, TimeUnit.MINUTES).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "location_polling",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
     }
 
     private fun saveContacts() {

@@ -12,6 +12,8 @@ androidx-exifinterface = "1.4.1"
 androidx-navigation = "2.9.0"
 androidx-profileinstaller = "1.4.1"
 androidx-room = "2.7.2"
+androidx-work = "2.10.1"
+gms-play-services-location = "21.0.1"
 cache4k = "0.7.0"
 coil = "3.2.0"
 kotlin = "2.2.0"
@@ -54,6 +56,8 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "androidx-profileinstaller" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work" }
+gms-play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "gms-play-services-location" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil" }

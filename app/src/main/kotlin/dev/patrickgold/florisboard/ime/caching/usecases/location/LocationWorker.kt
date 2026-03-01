@@ -3,34 +3,25 @@ package dev.patrickgold.florisboard.ime.caching.usecases.location
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.patrickgold.florisboard.ime.caching.usecases.location.models.toLocationData
-import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import dev.patrickgold.florisboard.temporaryCacher
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.time.Duration.Companion.minutes
 
-class LocationPoller(context: Context, private val cacher: Cacher) {
-    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-
-    fun startPolling(scope: CoroutineScope) {
-        scope.launch {
-            while (isActive) {
-                fetchAndSave()
-                delay(5.minutes)
-            }
-        }
-    }
+class LocationWorker(
+    context: Context,
+    params: WorkerParameters
+) : CoroutineWorker(context, params) {
 
     @SuppressLint("MissingPermission")
-    private suspend fun fetchAndSave() {
-        try {
+    override suspend fun doWork(): Result {
+        return try {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
             val location = suspendCancellableCoroutine { continuation ->
                 val task = fusedLocationClient.getCurrentLocation(
                     Priority.PRIORITY_HIGH_ACCURACY,
@@ -41,21 +32,20 @@ class LocationPoller(context: Context, private val cacher: Cacher) {
                         if (loc != null) {
                             continuation.resume(loc)
                         } else {
-                            continuation.resumeWithException(
-                                IllegalStateException("Location result was null")
-                            )
+                            continuation.resumeWithException(IllegalStateException("Location was null"))
                         }
                     }
                 }
                 task.addOnFailureListener { e ->
-                    if (continuation.isActive) {
-                        continuation.resumeWithException(e)
-                    }
+                    if (continuation.isActive) continuation.resumeWithException(e)
                 }
             }
+            val cacher by applicationContext.temporaryCacher()
             cacher.writeLocationToCache(location.toLocationData())
+            Result.success()
         } catch (e: Exception) {
-            Log.w("LocationPoller", "Failed to fetch location", e)
+            Log.w("LocationWorker", "Failed to fetch location", e)
+            Result.failure()
         }
     }
 }
