@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The FlorisBoard Contributors
+ * Copyright (C) 2025-2026 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package dev.patrickgold.florisboard.ime.caching.contacts
+package dev.patrickgold.florisboard.ime.caching.usecases.contacts.models
+
+import android.net.Uri
 
 data class ContactDetails(
     val id: String,
@@ -23,6 +25,6 @@ data class ContactDetails(
     val emails: List<String>,
     val addresses: List<String>,
     val organization: String?,
-    val photoUri: android.net.Uri?,
+    val photoUri: Uri?,
 )
 

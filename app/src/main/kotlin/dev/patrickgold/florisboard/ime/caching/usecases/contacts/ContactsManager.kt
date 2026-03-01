@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The FlorisBoard Contributors
+ * Copyright (C) 2025-2026 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package dev.patrickgold.florisboard.ime.caching.contacts
+package dev.patrickgold.florisboard.ime.caching.usecases.contacts
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
+import dev.patrickgold.florisboard.ime.caching.usecases.contacts.models.ContactDetails
 
 /**
  * Fetches all contacts and their associated details (phones, emails, addresses, organization).

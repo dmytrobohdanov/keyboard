@@ -27,9 +27,8 @@ import android.util.Log
 import androidx.core.os.UserManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.ime.caching.InputType
-import dev.patrickgold.florisboard.ime.caching.TemporaryCacher
-import dev.patrickgold.florisboard.ime.caching.contacts.getAllContactDetails
+import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getAllContactDetails
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
@@ -86,7 +85,7 @@ class FlorisApplication : Application() {
     val nlpManager = lazy { NlpManager(this) }
     val subtypeManager = lazy { SubtypeManager(this) }
     val themeManager = lazy { ThemeManager(this) }
-    val temporaryCacher = lazy { TemporaryCacher(this) }
+    val cacher = lazy { Cacher(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -134,13 +133,13 @@ class FlorisApplication : Application() {
         saveContacts()
     }
 
-    private fun saveContacts(){
+    private fun saveContacts() {
         Log.d("piing", "saveContacts: ")
         scope.launch(Dispatchers.Default) {
             val contacts = getAllContactDetails(this@FlorisApplication)
 
-            withContext(Dispatchers.Main){
-                temporaryCacher.value.writeToCache(contacts.toString(), InputType.CONTACTS)
+            withContext(Dispatchers.Main) {
+                cacher.value.writeContactsToCache(contacts)
             }
         }
     }
@@ -188,7 +187,7 @@ fun Context.keyboardManager() = this.florisApplication().keyboardManager
 
 fun Context.nlpManager() = this.florisApplication().nlpManager
 
-fun Context.temporaryCacher() = this.florisApplication().temporaryCacher
+fun Context.temporaryCacher() = this.florisApplication().cacher
 
 fun Context.subtypeManager() = this.florisApplication().subtypeManager
 

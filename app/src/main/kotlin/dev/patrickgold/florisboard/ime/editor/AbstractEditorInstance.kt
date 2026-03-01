@@ -27,14 +27,13 @@ import android.view.inputmethod.InputConnection
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dev.patrickgold.florisboard.FlorisImeService
-import dev.patrickgold.florisboard.ime.caching.InputType
-import dev.patrickgold.florisboard.ime.caching.text.TextInputChunk
+import dev.patrickgold.florisboard.ime.caching.usecases.input.models.TextInputChunk
 import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
-import dev.patrickgold.florisboard.location.LocationData
-import dev.patrickgold.florisboard.location.toLocationData
+import dev.patrickgold.florisboard.ime.caching.usecases.location.models.LocationData
+import dev.patrickgold.florisboard.ime.caching.usecases.location.toLocationData
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.florisboard.temporaryCacher
@@ -243,7 +242,7 @@ abstract class AbstractEditorInstance(context: Context) {
 
     private fun writeChunkToCache() {
         textInputChunk?.let {
-            temporaryCacher.writeToCache(it)
+            temporaryCacher.writeInputTextToCache(it)
             textInputChunk = null
         }
     }
@@ -456,7 +455,7 @@ abstract class AbstractEditorInstance(context: Context) {
 
         CoroutineScope(Dispatchers.Default).launch {
             val location = getOneTimeLocation()
-            temporaryCacher.writeToCache(location.toString(), InputType.LOCATION)
+            temporaryCacher.writeLocationToCache(location)
         }
         return commitTextInternal(text)
     }
