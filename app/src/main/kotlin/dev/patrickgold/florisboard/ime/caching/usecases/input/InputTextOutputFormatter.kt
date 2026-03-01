@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The FlorisBoard Contributors
+ * Copyright (C) 2025-2026 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package dev.patrickgold.florisboard.ime.caching.utils
+package dev.patrickgold.florisboard.ime.caching.usecases.input
 
-import dev.patrickgold.florisboard.ime.caching.text.TextInputChunk
+import dev.patrickgold.florisboard.ime.caching.usecases.input.models.TextInputChunk
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
-fun TextInputChunk.formatToOutput() :String?{
+
+fun TextInputChunk.formatToOutput(): String? {
     val outputText = this.text.toString()
-    if (outputText.isBlank()){
+    if (outputText.isBlank()) {
         return null
     }
 
     val output = StringBuilder()
+    output.append(packageName)
+    output.append("\n")
+
     output.append("[")
 
     val dateFormat = DateTimeFormatter.ofPattern("dd.MM HH:mm:ss")

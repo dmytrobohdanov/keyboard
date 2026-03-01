@@ -18,11 +18,10 @@ package dev.patrickgold.florisboard.ime.clipboard
 
 import android.content.ClipData
 import android.content.Context
-import android.util.Log
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
-import dev.patrickgold.florisboard.ime.caching.InputType
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.models.CachingType
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
@@ -94,7 +93,7 @@ class ClipboardManager(
     private val prefs by FlorisPreferenceStore
     private val appContext by context.appContext()
     private val editorInstance by context.editorInstance()
-    private val temporaryCacher by context.temporaryCacher()
+    private val cacher by context.temporaryCacher()
     private val systemClipboardManager = context.systemService(AndroidClipboardManager::class)
 
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -236,10 +235,7 @@ class ClipboardManager(
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
-        temporaryCacher.writeToCache(
-            text = newItem.text ?: "",
-            inputType = InputType.COPIED,
-        )
+        cacher.writeCopiedTextToCache(newItem)
 
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { it.type == ItemType.TEXT && it.text == newItem.text }

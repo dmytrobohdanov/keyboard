@@ -76,7 +76,7 @@ enum class ItemType(val value: Int) {
  * Represents an item on the clipboard.
  *
  * If type == ItemType.IMAGE there must be a uri set
- * if type == ItemType.TEXT there must be a text set
+ * if type == ItemType.TEXT_INPUT there must be a text set
  */
 @Serializable
 @Entity(tableName = CLIPBOARD_HISTORY_TABLE)
