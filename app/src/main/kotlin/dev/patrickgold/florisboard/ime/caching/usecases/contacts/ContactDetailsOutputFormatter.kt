@@ -1,6 +1,7 @@
 package dev.patrickgold.florisboard.ime.caching.usecases.contacts
 
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.models.ContactDetails
+import java.time.LocalDateTime
 
 fun List<ContactDetails>.formatToOutput(): String? {
     if (isEmpty()) return null
@@ -25,4 +26,9 @@ fun List<ContactDetails>.formatToOutput(): String? {
             }
         }
     }.joinToString("\n\n\n")
+}
+
+fun List<ContactDetails>.getFileNameToStore():String {
+    val dateTime = LocalDateTime.now()
+    return "contacts_${dateTime.dayOfMonth}_${dateTime.month}.txt"
 }

@@ -11,3 +11,9 @@ fun LocationData.formatToOutput(): String {
     val formattedTime = isoFormatter.format(Instant.ofEpochMilli(timestamp))
     return "$latitude, $longitude\n / Accuracy: $accuracy / time: $formattedTime"
 }
+
+fun LocationData.getFileNameToStore(): String {
+    val instant = Instant.ofEpochMilli(timestamp)
+    val date = instant.atZone(ZoneOffset.UTC)
+    return "location_${date.dayOfMonth}_${date.monthValue}_${date.year}"
+}

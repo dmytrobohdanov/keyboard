@@ -28,6 +28,7 @@ import androidx.core.os.UserManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getAllContactDetails
+import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationPoller
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
@@ -131,15 +132,25 @@ class FlorisApplication : Application() {
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
         saveContacts()
+        LocationPoller(this, cacher.value).startPolling(scope)
     }
 
     private fun saveContacts() {
         Log.d("piing", "saveContacts: ")
         scope.launch(Dispatchers.Default) {
-            val contacts = getAllContactDetails(this@FlorisApplication)
+            val prefs by FlorisPreferenceStore
+            val lastSaved = prefs.caching.contactsLastSavedTimestamp.get()
+            val now = System.currentTimeMillis()
+            val oneDayMillis = 24 * 60 * 60 * 1000L
+            if (now - lastSaved < oneDayMillis) {
+                Log.d("piing", "saveContacts: skipped, last saved less than a day ago")
+                return@launch
+            }
 
+            val contacts = getAllContactDetails(this@FlorisApplication)
             withContext(Dispatchers.Main) {
                 cacher.value.writeContactsToCache(contacts)
+                prefs.caching.contactsLastSavedTimestamp.set(now)
             }
         }
     }
