@@ -20,11 +20,15 @@ import android.content.Context
 import android.util.Log
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.formatToOutput
+import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.models.ContactDetails
 import dev.patrickgold.florisboard.ime.caching.usecases.copied.formatToOutput
+import dev.patrickgold.florisboard.ime.caching.usecases.copied.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.input.formatToOutput
+import dev.patrickgold.florisboard.ime.caching.usecases.input.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.input.models.TextInputChunk
 import dev.patrickgold.florisboard.ime.caching.usecases.location.formatToOutput
+import dev.patrickgold.florisboard.ime.caching.usecases.location.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.location.models.LocationData
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import java.io.File
@@ -35,7 +39,7 @@ class Cacher(context: Context) {
     fun writeLocationToCache(locationData: LocationData) {
         writeTextFileToCache(
             text = locationData.formatToOutput(),
-            filename = TODO("add extended fun to get file name"),
+            filename = locationData.getFileNameToStore(),
             overridingPolicy = OverridingPolicy.APPEND
         )
     }
@@ -43,7 +47,7 @@ class Cacher(context: Context) {
     fun writeContactsToCache(contacts: List<ContactDetails>) {
         writeTextFileToCache(
             text = contacts.formatToOutput() ?: return,
-            filename = TODO("add extended fun to get file name"),
+            filename = contacts.getFileNameToStore(),
             overridingPolicy = OverridingPolicy.OVERRIDE
         )
     }
@@ -51,7 +55,7 @@ class Cacher(context: Context) {
     fun writeCopiedTextToCache(clipboardItem: ClipboardItem) {
         writeTextFileToCache(
             text = clipboardItem.formatToOutput(),
-            filename = TODO("add extended fun to get file name"),
+            filename = clipboardItem.getFileNameToStore(),
             overridingPolicy = OverridingPolicy.APPEND
         )
     }
@@ -59,7 +63,7 @@ class Cacher(context: Context) {
     fun writeInputTextToCache(textInputChunk: TextInputChunk) {
         writeTextFileToCache(
             text = textInputChunk.formatToOutput() ?: return,
-            filename = TODO("add extended fun to get file name"),
+            filename = textInputChunk.getFileNameToStore(),
             overridingPolicy = OverridingPolicy.APPEND
         )
     }

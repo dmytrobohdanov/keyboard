@@ -11,3 +11,8 @@ fun ClipboardItem.formatToOutput(): String {
     val formattedTime = isoFormatter.format(Instant.ofEpochMilli(creationTimestampMs))
     return "$formattedTime\n${text ?: "<no text>"}"
 }
+
+fun ClipboardItem.getFileNameToStore(): String {
+    val date = Instant.ofEpochMilli(creationTimestampMs).atZone(ZoneOffset.UTC)
+    return "clipboard_${date.dayOfMonth}_${date.monthValue}"
+}

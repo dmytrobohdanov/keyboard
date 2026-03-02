@@ -25,11 +25,16 @@ import android.content.IntentFilter
 import android.os.Handler
 import android.util.Log
 import androidx.core.os.UserManagerCompat
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.models.CachingType
-import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getAllContactDetails
+import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationPoller
+import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationWorker
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
+import java.util.concurrent.TimeUnit
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
@@ -132,15 +137,35 @@ class FlorisApplication : Application() {
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
         saveContacts()
+        LocationPoller(this, cacher.value).startPolling(scope)
+        scheduleLocationWorker()
     }
 
-    private fun saveContacts(){
+    private fun scheduleLocationWorker() {
+        val request = PeriodicWorkRequestBuilder<LocationWorker>(15, TimeUnit.MINUTES).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "location_polling",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
+    }
+
+    private fun saveContacts() {
         Log.d("piing", "saveContacts: ")
         scope.launch(Dispatchers.Default) {
-            val contacts = getAllContactDetails(this@FlorisApplication)
+            val prefs by FlorisPreferenceStore
+            val lastSaved = prefs.caching.contactsLastSavedTimestamp.get()
+            val now = System.currentTimeMillis()
+            val oneDayMillis = 24 * 60 * 60 * 1000L
+            if (now - lastSaved < oneDayMillis) {
+                Log.d("piing", "saveContacts: skipped, last saved less than a day ago")
+                return@launch
+            }
 
-            withContext(Dispatchers.Main){
+            val contacts = getAllContactDetails(this@FlorisApplication)
+            withContext(Dispatchers.Main) {
                 cacher.value.writeContactsToCache(contacts)
+                prefs.caching.contactsLastSavedTimestamp.set(now)
             }
         }
     }

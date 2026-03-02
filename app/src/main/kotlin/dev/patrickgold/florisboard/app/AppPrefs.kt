@@ -796,6 +796,14 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    val caching = Caching()
+    inner class Caching {
+        val contactsLastSavedTimestamp = long(
+            key = "caching__contacts_last_saved_timestamp",
+            default = 0L,
+        )
+    }
+
     override fun migrate(entry: PreferenceMigrationEntry): PreferenceMigrationEntry {
         return when (entry.key) {
 

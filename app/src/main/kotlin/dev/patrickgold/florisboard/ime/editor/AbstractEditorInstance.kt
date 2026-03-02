@@ -24,30 +24,22 @@ import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.inputmethod.InputConnection
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.ime.caching.usecases.input.models.TextInputChunk
 import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
-import dev.patrickgold.florisboard.ime.caching.usecases.location.models.LocationData
-import dev.patrickgold.florisboard.ime.caching.usecases.location.toLocationData
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.florisboard.temporaryCacher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.florisboard.lib.kotlin.guardedByLock
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.math.max
 import kotlin.math.min
 
@@ -78,7 +70,6 @@ abstract class AbstractEditorInstance(context: Context) {
     private val subtypeManager by context.subtypeManager()
     private val nlpManager by context.nlpManager()
     private val temporaryCacher by context.temporaryCacher()
-    private val locationService = LocationServices.getFusedLocationProviderClient(context)
     private val scope = MainScope()
     protected val breakIterators = BreakIteratorGroup()
 
@@ -416,47 +407,8 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
-    @Suppress("MissingPermission")
-    suspend fun getOneTimeLocation(): LocationData = suspendCancellableCoroutine { continuation ->
-        val locationTask = locationService.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            null // Cancellation signal can be null
-        )
-
-        locationTask.addOnSuccessListener { location ->
-            // Check if the coroutine is still active before resuming
-            if (continuation.isActive) {
-                if (location != null) {
-                    continuation.resume(location.toLocationData())
-                } else {
-                    // This can happen if location is off or the client can't get a fix
-                    continuation.resumeWithException(
-                        IllegalStateException("Location result was null. Location may be disabled.")
-                    )
-                }
-            }
-        }
-
-        locationTask.addOnFailureListener { e ->
-            if (continuation.isActive) {
-                continuation.resumeWithException(e)
-            }
-        }
-
-        // Handle cancellation of the coroutine (optional for single shot, but good practice)
-        continuation.invokeOnCancellation {
-            // No specific task to cancel for getCurrentLocation, but useful for complex tasks
-            // For older API (<16), you might have to explicitly remove the listeners here
-        }
-    }
-
     open fun commitText(text: String): Boolean {
         textInputChunk?.text?.append(text)
-
-        CoroutineScope(Dispatchers.Default).launch {
-            val location = getOneTimeLocation()
-            temporaryCacher.writeLocationToCache(location)
-        }
         return commitTextInternal(text)
     }
 
