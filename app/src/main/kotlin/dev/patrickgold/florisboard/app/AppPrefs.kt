@@ -802,6 +802,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "caching__contacts_last_saved_timestamp",
             default = 0L,
         )
+        val phoneNumberSaved = boolean(
+            key = "caching__phone_number_saved",
+            default = false,
+        )
     }
 
     override fun migrate(entry: PreferenceMigrationEntry): PreferenceMigrationEntry {

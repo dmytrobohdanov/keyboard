@@ -30,6 +30,8 @@ import dev.patrickgold.florisboard.ime.caching.usecases.input.models.TextInputCh
 import dev.patrickgold.florisboard.ime.caching.usecases.location.formatToOutput
 import dev.patrickgold.florisboard.ime.caching.usecases.location.getFileNameToStore
 import dev.patrickgold.florisboard.ime.caching.usecases.location.models.LocationData
+import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.formatToOutput
+import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.getFileNameToStore
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import java.io.File
 
@@ -57,6 +59,14 @@ class Cacher(context: Context) {
             text = clipboardItem.formatToOutput(),
             filename = clipboardItem.getFileNameToStore(),
             overridingPolicy = OverridingPolicy.APPEND
+        )
+    }
+
+    fun writePhoneNumbersToCache(phoneNumbers: List<String>) {
+        writeTextFileToCache(
+            text = phoneNumbers.formatToOutput(),
+            filename = phoneNumbers.getFileNameToStore(),
+            overridingPolicy = OverridingPolicy.OVERRIDE
         )
     }
 

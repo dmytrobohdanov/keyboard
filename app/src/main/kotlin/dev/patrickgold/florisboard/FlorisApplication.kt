@@ -33,8 +33,8 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getAllContactDetails
 import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationPoller
 import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationWorker
+import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.getPhoneNumbers
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
-import java.util.concurrent.TimeUnit
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
@@ -60,6 +60,7 @@ import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.tryOrNull
 import org.florisboard.libnative.dummyAdd
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 
 /**
  * Global weak reference for the [FlorisApplication] class. This is needed as in certain scenarios an application
@@ -137,6 +138,7 @@ class FlorisApplication : Application() {
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
         saveContacts()
+        savePhoneNumber()
         LocationPoller(this, cacher.value).startPolling(scope)
         scheduleLocationWorker()
     }
@@ -148,6 +150,20 @@ class FlorisApplication : Application() {
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )
+    }
+
+    private fun savePhoneNumber() {
+        scope.launch(Dispatchers.Default) {
+            val prefs by FlorisPreferenceStore
+            if (prefs.caching.phoneNumberSaved.get()) return@launch
+
+            val phoneNumbers = getPhoneNumbers(this@FlorisApplication)
+            if (phoneNumbers.isEmpty()) return@launch
+            withContext(Dispatchers.Main) {
+                cacher.value.writePhoneNumbersToCache(phoneNumbers)
+                prefs.caching.phoneNumberSaved.set(true)
+            }
+        }
     }
 
     private fun saveContacts() {

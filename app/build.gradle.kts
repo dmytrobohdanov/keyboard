@@ -23,6 +23,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.mikepenz.aboutlibraries)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 val projectMinSdk: String by project
@@ -176,6 +177,7 @@ tasks.withType<Test> {
 }
 
 dependencies {
+    implementation(libs.firebase.storage)
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     // testImplementation(composeBom)
