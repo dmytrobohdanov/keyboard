@@ -12,12 +12,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Entity(tableName = "uploaded_files")
-private data class UploadedFile(
+internal data class UploadedFile(
     @PrimaryKey val filename: String,
 )
 
 @Dao
-private interface UploadedFileDao {
+internal interface UploadedFileDao {
     @Query("SELECT COUNT(*) FROM uploaded_files WHERE filename = :filename")
     suspend fun exists(filename: String): Int
 
@@ -26,7 +26,7 @@ private interface UploadedFileDao {
 }
 
 @Database(entities = [UploadedFile::class], version = 1)
-private abstract class FilesBackupsDatabase : RoomDatabase() {
+internal abstract class FilesBackupsDatabase : RoomDatabase() {
     abstract fun dao(): UploadedFileDao
 
     companion object {
