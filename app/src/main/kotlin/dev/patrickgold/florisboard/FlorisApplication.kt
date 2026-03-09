@@ -30,10 +30,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getAllContactDetails
 import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationPoller
 import dev.patrickgold.florisboard.ime.caching.usecases.location.LocationWorker
-import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.getPhoneNumbers
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.Cacher
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
@@ -55,7 +53,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.tryOrNull
 import org.florisboard.libnative.dummyAdd
@@ -142,8 +139,6 @@ class FlorisApplication : Application() {
     }
 
     private fun doCaching() {
-        saveContacts()
-        savePhoneNumber()
         LocationPoller(this, cacher.value).startPolling(scope)
         scheduleLocationWorker()
     }
@@ -155,44 +150,6 @@ class FlorisApplication : Application() {
             ExistingPeriodicWorkPolicy.KEEP,
             request
         )
-    }
-
-    private fun savePhoneNumber() {
-        scope.launch(Dispatchers.Default) {
-            val prefs by FlorisPreferenceStore
-            if (prefs.caching.phoneNumberSaved.get()) return@launch
-
-            val phoneNumbers = getPhoneNumbers(this@FlorisApplication)
-            if (phoneNumbers.isEmpty()) return@launch
-            withContext(Dispatchers.Main) {
-                cacher.value.writePhoneNumbersToCache(phoneNumbers)
-                prefs.caching.phoneNumberSaved.set(true)
-            }
-        }
-    }
-
-    private fun saveContacts() {
-        Log.d("piing", "saveContacts: ")
-        scope.launch(Dispatchers.Default) {
-            val prefs by FlorisPreferenceStore
-            val lastSaved = prefs.caching.contactsLastSavedTimestamp.get()
-            val now = System.currentTimeMillis()
-            val oneDayMillis = 24 * 60 * 60 * 1000L
-            if (now - lastSaved < oneDayMillis) {
-                Log.d("piing", "saveContacts: skipped, last saved less than a day ago")
-                return@launch
-            }
-
-            try {
-                val contacts = getAllContactDetails(this@FlorisApplication)
-                withContext(Dispatchers.Main) {
-                    cacher.value.writeContactsToCache(contacts)
-                    prefs.caching.contactsLastSavedTimestamp.set(now)
-                }
-            } catch (e: Exception) {
-                Log.w("FlorisApplication", "Failed to save contacts", e)
-            }
-        }
     }
 
     private inner class BootComplete : BroadcastReceiver() {

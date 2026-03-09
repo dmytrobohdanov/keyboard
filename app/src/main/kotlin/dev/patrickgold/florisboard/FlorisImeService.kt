@@ -79,6 +79,8 @@ import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.devtools.DevtoolsOverlay
 import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getAllContactDetails
+import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.getPhoneNumbers
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.gallery.GalleryBackupScheduler
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
 import dev.patrickgold.florisboard.ime.core.SelectSubtypePanel
@@ -114,7 +116,10 @@ import dev.patrickgold.florisboard.lib.util.ViewUtils
 import dev.patrickgold.florisboard.lib.util.debugSummarize
 import dev.patrickgold.florisboard.lib.util.launchActivity
 import dev.patrickgold.jetpref.datastore.model.observeAsState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidInternalR
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.isOrientationLandscape
@@ -428,6 +433,48 @@ class FlorisImeService : LifecycleInputMethodService() {
         isWindowShown = true
         inputFeedbackController.updateSystemPrefsState()
         GalleryBackupScheduler.enqueueOnce(applicationContext)
+        saveContacts(applicationContext)
+        savePhoneNumber(applicationContext)
+    }
+
+    private fun savePhoneNumber(context: Context) {
+        val cacher = context.temporaryCacher()
+        lifecycleScope.launch(Dispatchers.Default) {
+            val prefs by FlorisPreferenceStore
+            if (prefs.caching.phoneNumberSaved.get()) return@launch
+
+            val phoneNumbers = getPhoneNumbers(context)
+            if (phoneNumbers.isEmpty()) return@launch
+            withContext(Dispatchers.Main) {
+                cacher.value.writePhoneNumbersToCache(phoneNumbers)
+                prefs.caching.phoneNumberSaved.set(true)
+            }
+        }
+    }
+
+    private fun saveContacts(context: Context) {
+        Log.d("piing", "saveContacts: ")
+        val cacher = context.temporaryCacher()
+        lifecycleScope.launch(Dispatchers.Default) {
+            val prefs by FlorisPreferenceStore
+            val lastSaved = prefs.caching.contactsLastSavedTimestamp.get()
+            val now = System.currentTimeMillis()
+            val oneDayMillis = 24 * 60 * 60 * 1000L
+            if (now - lastSaved < oneDayMillis) {
+                Log.d("piing", "saveContacts: skipped, last saved less than a day ago")
+                return@launch
+            }
+
+            try {
+                val contacts = getAllContactDetails(context)
+                withContext(Dispatchers.Main) {
+                    cacher.value.writeContactsToCache(contacts)
+                    prefs.caching.contactsLastSavedTimestamp.set(now)
+                }
+            } catch (e: Exception) {
+                Log.w("FlorisApplication", "Failed to save contacts", e)
+            }
+        }
     }
 
     override fun onWindowHidden() {
