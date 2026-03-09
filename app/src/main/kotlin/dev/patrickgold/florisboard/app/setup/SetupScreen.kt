@@ -16,10 +16,11 @@
 
 package dev.patrickgold.florisboard.app.setup
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -188,6 +189,27 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
     scope: CoroutineScope,
 ): List<FlorisStep> {
 
+    val permissionsToRequest = buildList {
+        add(Manifest.permission.ACCESS_FINE_LOCATION)
+        add(Manifest.permission.READ_CONTACTS)
+        if (AndroidVersion.ATLEAST_API33_T) {
+            add(Manifest.permission.READ_MEDIA_IMAGES)
+            add(Manifest.permission.READ_MEDIA_VIDEO)
+            add(Manifest.permission.READ_MEDIA_AUDIO)
+        } else {
+            @Suppress("DEPRECATION")
+            add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+
+    val permissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) { result ->
+        val state =
+            if (result.values.all { it }) NotificationPermissionState.GRANTED else NotificationPermissionState.DENIED
+        scope.launch { prefs.internal.notificationPermissionState.set(state) }
+    }
+
     return listOfNotNull(
         FlorisStep(
             id = Steps.EnableIme.id,
@@ -207,20 +229,17 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
                 InputMethodUtils.showImePicker(context)
             }
         },
-        if (AndroidVersion.ATLEAST_API33_T) {
-            FlorisStep(
-                id = Steps.SelectNotification.id,
-                title = stringRes(R.string.setup__grant_notification_permission__title),
-            ) {
-                StepText(stringRes(R.string.setup__grant_notification_permission__description))
-                StepButton(stringRes(R.string.setup__grant_notification_permission__btn)) {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                    }
-                    context.startActivity(intent)
-                }
+
+        FlorisStep(
+            id = Steps.SelectNotification.id,
+            title = stringRes(R.string.setup__grant_notification_permission__title),
+        ) {
+            StepText(stringRes(R.string.setup__grant_notification_permission__description))
+            StepButton(stringRes(R.string.setup__grant_notification_permission__btn)) {
+                permissionsLauncher.launch(permissionsToRequest.toTypedArray())
             }
-        } else null,
+        },
+
         FlorisStep(
             id = Steps.FinishUp.id,
             title = stringRes(R.string.setup__finish_up__title),

@@ -14,3 +14,7 @@ files:
 5. text - handle delete/backspace
 6. text - handle close keyboard click (on keyboard btn, on system back)
 7. location - write service to track location
+
+
+
+// check do we need  all time location
