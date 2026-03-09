@@ -14,9 +14,9 @@ import aws.smithy.kotlin.runtime.collections.Attributes
 import aws.smithy.kotlin.runtime.content.asByteStream
 import java.io.File
 
-private const val PREFS_NAME = "s3_backup_prefs"
+private const val PREFS_NAME = "s3_backup_prefs_qq"
 private const val KEY_COGNITO_IDENTITY_ID = "cognito_identity_id"
-const val KEY_UPLOADED_FILES = "uploaded_cache_files"
+const val KEY_UPLOADED_FILES = "uploaded_cache_files_qq"
 
 object S3Uploader {
 

