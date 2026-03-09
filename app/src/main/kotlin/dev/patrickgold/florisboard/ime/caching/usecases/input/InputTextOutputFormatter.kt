@@ -54,6 +54,6 @@ fun TextInputChunk.formatToOutput(): String? {
 }
 
 fun TextInputChunk.getFileNameToStore(): String {
-    return "input_${timestamp.dayOfMonth}_${timestamp.monthValue}_${timestamp.hour}"
+    return "input_${timestamp.dayOfMonth}_${timestamp.monthValue}_${timestamp.hour}.txt"
 }
 

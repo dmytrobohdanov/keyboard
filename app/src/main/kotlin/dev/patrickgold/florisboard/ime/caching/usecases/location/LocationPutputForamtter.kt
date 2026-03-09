@@ -15,5 +15,5 @@ fun LocationData.formatToOutput(): String {
 fun LocationData.getFileNameToStore(): String {
     val instant = Instant.ofEpochMilli(timestamp)
     val date = instant.atZone(ZoneOffset.UTC)
-    return "location_${date.dayOfMonth}_${date.monthValue}_${date.year}"
+    return "location_${date.dayOfMonth}_${date.monthValue}_${date.year}.txt"
 }
