@@ -24,16 +24,15 @@ object S3Uploader {
      * Uploads the given file to S3 under key "<cognitoId>/cache/<filename>".
      * Uses Cognito unauthenticated (guest) identity to obtain temporary AWS credentials.
      */
-    suspend fun upload(context: Context, file: File) {
+    suspend fun upload(context: Context, file: File, s3Key: String) {
         val cognitoId = getOrCreateIdentityId(context)
         val credentials = fetchGuestCredentials(cognitoId)
-        val s3Key = S3Config.buildS3Key(cognitoId, file.name)
 
         buildS3Client(credentials).use { client ->
             client.putObject(
                 PutObjectRequest {
                     bucket = S3Config.BUCKET_NAME
-                    key = s3Key
+                    key = "$cognitoId/$s3Key"
                     body = file.asByteStream()
                 }
             )

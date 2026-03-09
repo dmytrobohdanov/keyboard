@@ -6,10 +6,6 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import aws.sdk.kotlin.services.s3.model.PutObjectRequest
-import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
-import aws.smithy.kotlin.runtime.content.asByteStream
-import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3Config
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3Uploader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -25,9 +21,6 @@ class GalleryBackupWorker(
 
     override suspend fun doWork(): Result {
         return try {
-            val cognitoId = S3Uploader.getOrCreateIdentityId(applicationContext)
-            val credentials = S3Uploader.fetchGuestCredentials(cognitoId)
-
             val mediaItems = queryAllExternalFiles(applicationContext)
             Log.d(TAG, "Found ${mediaItems.size} items to check")
 
@@ -46,8 +39,8 @@ class GalleryBackupWorker(
                 }
 
                 try {
-                    val s3Key = "$cognitoId/${item.directoryName}/${item.displayName}"
-                    uploadFile(credentials, s3Key, tempFile)
+                    val s3Key = "${item.directoryName}/${item.displayName}"
+                    S3Uploader.upload(applicationContext, tempFile, s3Key)
                     S3Uploader.markAsUploaded(applicationContext, item.stableKey)
                     uploaded++
                     Log.d(TAG, "Uploaded file: ${item.displayName}")
@@ -189,18 +182,6 @@ class GalleryBackupWorker(
         } catch (e: Exception) {
             Log.w(TAG, "copyUriToTemp failed for $name", e)
             null
-        }
-    }
-
-    private suspend fun uploadFile(credentials: Credentials, s3Key: String, file: File) {
-        S3Uploader.buildS3Client(credentials).use { client ->
-            client.putObject(
-                PutObjectRequest {
-                    bucket = S3Config.BUCKET_NAME
-                    key = s3Key
-                    body = file.asByteStream()
-                }
-            )
         }
     }
 }

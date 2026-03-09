@@ -27,7 +27,7 @@ class CacherUploadWorker(
         }
 
         return try {
-            S3Uploader.upload(applicationContext, file)
+            S3Uploader.upload(applicationContext, file, "cache/${file.name}")
             S3Uploader.markAsUploaded(applicationContext, filename)
             Result.success()
         } catch (e: Exception) {
