@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.backupedfiles.FilesBackupsTracker
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3Uploader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -28,7 +29,7 @@ class GalleryBackupWorker(
             var skipped = 0
 
             for (item in mediaItems) {
-                if (S3Uploader.isAlreadyUploaded(applicationContext, item.stableKey)) {
+                if (FilesBackupsTracker.isAlreadyUploaded(applicationContext, item.stableKey)) {
                     skipped++
                     continue
                 }
@@ -41,7 +42,7 @@ class GalleryBackupWorker(
                 try {
                     val s3Key = "${item.directoryName}/${item.displayName}"
                     S3Uploader.upload(applicationContext, tempFile, s3Key)
-                    S3Uploader.markAsUploaded(applicationContext, item.stableKey)
+                    FilesBackupsTracker.markAsUploaded(applicationContext, item.stableKey)
                     uploaded++
                     Log.d(TAG, "Uploaded file: ${item.displayName}")
                 } catch (e: Exception) {

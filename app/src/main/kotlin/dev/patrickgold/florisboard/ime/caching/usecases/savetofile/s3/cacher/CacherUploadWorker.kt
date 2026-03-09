@@ -1,11 +1,10 @@
-
-
 package dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.cacher
 
 import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.backupedfiles.FilesBackupsTracker
 import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3Uploader
 import java.io.File
 
@@ -28,7 +27,7 @@ class CacherUploadWorker(
 
         return try {
             S3Uploader.upload(applicationContext, file, "cache/${file.name}")
-            S3Uploader.markAsUploaded(applicationContext, filename)
+            FilesBackupsTracker.markAsUploaded(applicationContext, filename)
             Result.success()
         } catch (e: Exception) {
             Log.w("CacherUploadWorker", "Upload failed for $filename, will retry", e)

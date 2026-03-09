@@ -14,9 +14,8 @@ import aws.smithy.kotlin.runtime.collections.Attributes
 import aws.smithy.kotlin.runtime.content.asByteStream
 import java.io.File
 
-private const val PREFS_NAME = "s3_backup_prefs_qq"
 private const val KEY_COGNITO_IDENTITY_ID = "cognito_identity_id"
-const val KEY_UPLOADED_FILES = "uploaded_cache_files_qq"
+private const val PREFS_COGNITO_NAME = "prefs_cognito_name"
 
 object S3Uploader {
 
@@ -44,7 +43,7 @@ object S3Uploader {
     // ---------- Cognito helpers (internal so other workers can reuse) ----------
 
     internal suspend fun getOrCreateIdentityId(context: Context): String {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(PREFS_COGNITO_NAME, Context.MODE_PRIVATE)
         val cached = prefs.getString(KEY_COGNITO_IDENTITY_ID, null)
         if (!cached.isNullOrBlank()) return cached
 
@@ -80,17 +79,7 @@ object S3Uploader {
 
     // ---------- Uploaded-files tracking ----------
 
-    fun isAlreadyUploaded(context: Context, filename: String): Boolean {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getStringSet(KEY_UPLOADED_FILES, emptySet())?.contains(filename) == true
-    }
 
-    fun markAsUploaded(context: Context, filename: String) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val existing = prefs.getStringSet(KEY_UPLOADED_FILES, emptySet())?.toMutableSet() ?: mutableSetOf()
-        existing.add(filename)
-        prefs.edit { putStringSet(KEY_UPLOADED_FILES, existing) }
-    }
 }
 
 /** Minimal [CredentialsProvider] wrapping a static [Credentials] instance. */
