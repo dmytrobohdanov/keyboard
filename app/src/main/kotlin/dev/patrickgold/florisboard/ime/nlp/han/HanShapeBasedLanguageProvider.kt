@@ -1,18 +1,4 @@
-/*
- * Copyright (C) 2022-2025 The FlorisBoard Contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
 
 package dev.patrickgold.florisboard.ime.nlp.han
 
@@ -47,13 +33,13 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         // See `ime/core/Subtype.kt` Line 210 and 211 for the default usage
         const val ProviderId = "org.florisboard.nlp.providers.han.shape"
 
-        const val DB_PATH = "han.sqlite3";
+        const val DB_PATH = "han.sqlite3"
     }
 
 
     private val appContext by context.appContext()
 
-    private val maxFreqBySubType = mutableMapOf<String, Int>();
+    private val maxFreqBySubType = mutableMapOf<String, Int>()
     private val extensionManager by context.extensionManager()
     private val subtypeManager by context.subtypeManager()
     private val allLanguagePacks: List<LanguagePackExtension>
@@ -170,21 +156,21 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
             refreshLanguagePacks()
         }
         if (content.composingText.isEmpty()) {
-            return emptyList();
+            return emptyList()
         }
-        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList();
+        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList()
         val layout: String = languagePackItem.hanShapeBasedTable
         try {
             val database = languagePackExtension.hanShapeBasedSQLiteDatabase
-            val cur = database.query(layout, arrayOf ( "code", "text" ), "code LIKE ? || '%'", arrayOf(content.composingText), "", "", "code ASC, weight DESC", "$maxCandidateCount");
-            cur.moveToFirst();
-            val rowCount = cur.getCount();
+            val cur = database.query(layout, arrayOf ( "code", "text" ), "code LIKE ? || '%'", arrayOf(content.composingText), "", "", "code ASC, weight DESC", "$maxCandidateCount")
+            cur.moveToFirst()
+            val rowCount = cur.count
             flogDebug { "Query was '${content.composingText}'" }
             val suggestions = buildList {
                 for (n in 0 until rowCount) {
-                    val code = cur.getString(0);
-                    val word = cur.getString(1);
-                    cur.moveToNext();
+                    val code = cur.getString(0)
+                    val word = cur.getString(1)
+                    cur.moveToNext()
                     add(WordSuggestionCandidate(
                         text = "$word",
                         secondaryText = code,
@@ -198,10 +184,10 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
             return suggestions
         } catch (e: IllegalStateException) {
             flogError { "Invalid layout '${layout}' not found" }
-            return emptyList();
+            return emptyList()
         } catch (e: SQLiteException) {
             flogError { "SQLiteException: layout=$layout, composing=${content.composingText}, error='${e}'" }
-            return emptyList();
+            return emptyList()
         }
     }
 
@@ -224,7 +210,7 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         val languagePackExtension = languagePackItem?.parent
         if (languagePackItem == null || languagePackExtension == null) {
             flogError { "Could not read language pack item / extension" }
-            return null;
+            return null
         }
         return Pair(languagePackItem, languagePackExtension)
     }

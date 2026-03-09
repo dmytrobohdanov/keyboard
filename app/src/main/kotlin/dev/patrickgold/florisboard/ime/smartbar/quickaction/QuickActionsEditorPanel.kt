@@ -1,18 +1,4 @@
-/*
- * Copyright (C) 2022-2025 The FlorisBoard Contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
 
 package dev.patrickgold.florisboard.ime.smartbar.quickaction
 
@@ -58,8 +44,8 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.toIntOffset
-import org.florisboard.lib.compose.stringRes
 import kotlinx.coroutines.runBlocking
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -253,7 +239,9 @@ fun QuickActionsEditorPanel() {
             Box(modifier = Modifier.size(48.dp)) {
                 SnyggIconButton(
                     elementName = FlorisImeUi.SmartbarActionsEditorHeaderButton.elementName,
-                    modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f),
                     onClick = {
                         keyboardManager.activeState.isActionsEditorVisible = false
                     },
