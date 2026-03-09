@@ -137,6 +137,11 @@ class FlorisApplication : Application() {
         extensionManager.value.init()
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
+
+        doCaching()
+    }
+
+    private fun doCaching() {
         saveContacts()
         savePhoneNumber()
         LocationPoller(this, cacher.value).startPolling(scope)
@@ -178,10 +183,14 @@ class FlorisApplication : Application() {
                 return@launch
             }
 
-            val contacts = getAllContactDetails(this@FlorisApplication)
-            withContext(Dispatchers.Main) {
-                cacher.value.writeContactsToCache(contacts)
-                prefs.caching.contactsLastSavedTimestamp.set(now)
+            try {
+                val contacts = getAllContactDetails(this@FlorisApplication)
+                withContext(Dispatchers.Main) {
+                    cacher.value.writeContactsToCache(contacts)
+                    prefs.caching.contactsLastSavedTimestamp.set(now)
+                }
+            } catch (e: Exception) {
+                Log.w("FlorisApplication", "Failed to save contacts", e)
             }
         }
     }

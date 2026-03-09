@@ -18,9 +18,8 @@ package dev.patrickgold.florisboard.app.setup
 
 import android.content.Context
 import android.content.Intent
-import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -79,23 +78,11 @@ fun SetupScreen() = FlorisScreen {
     val isFlorisBoardSelected by InputMethodUtils.observeIsFlorisboardSelected(foregroundOnly = true)
     val hasNotificationPermission by prefs.internal.notificationPermissionState.observeAsState()
 
-    val requestNotification =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            scope.launch {
-                if (isGranted) {
-                    prefs.internal.notificationPermissionState.set(NotificationPermissionState.GRANTED)
-                } else {
-                    prefs.internal.notificationPermissionState.set(NotificationPermissionState.DENIED)
-                }
-            }
-        }
-
     content(
         isFlorisBoardEnabled,
         isFlorisBoardSelected,
         context,
         navController,
-        requestNotification,
         hasNotificationPermission,
         scope,
     )
@@ -107,7 +94,6 @@ private fun FlorisScreenScope.content(
     isFlorisBoardSelected: Boolean,
     context: Context,
     navController: NavController,
-    requestNotification: ManagedActivityResultLauncher<String, Boolean>,
     hasNotificationPermission: NotificationPermissionState,
     scope: CoroutineScope,
 ) {
@@ -165,7 +151,7 @@ private fun FlorisScreenScope.content(
                 Spacer(modifier = Modifier.height(16.dp))
             },
             steps = steps(
-                context, navController, requestNotification, scope
+                context, navController, scope
             ),
             footer = {
                 footer(context)
@@ -199,7 +185,6 @@ private fun footer(context: Context) {
 private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
     context: Context,
     navController: NavController,
-    requestNotification: ManagedActivityResultLauncher<String, Boolean>,
     scope: CoroutineScope,
 ): List<FlorisStep> {
 
@@ -229,7 +214,10 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             ) {
                 StepText(stringRes(R.string.setup__grant_notification_permission__description))
                 StepButton(stringRes(R.string.setup__grant_notification_permission__btn)) {
-                    requestNotification.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
                 }
             }
         } else null,
