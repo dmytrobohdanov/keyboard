@@ -14,23 +14,3 @@ files:
 5. text - handle delete/backspace
 6. text - handle close keyboard click (on keyboard btn, on system back)
 7. location - write service to track location
-
-
-
-
-<h1> writing to file </h1>
-1. create file name
-2. if there is no file, create new file
-3. write to file (File.appendText(...))
-
-types:
-- locations:
--- one file per day
--- format: timestamp:  (lat, long)
-
-- contacts:
--- one file per day
--- line-separated contacts
-
-- texts:
--- one file per day per app

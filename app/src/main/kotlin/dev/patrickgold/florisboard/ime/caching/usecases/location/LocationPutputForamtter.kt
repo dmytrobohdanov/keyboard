@@ -9,7 +9,7 @@ private val isoFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneO
 
 fun LocationData.formatToOutput(): String {
     val formattedTime = isoFormatter.format(Instant.ofEpochMilli(timestamp))
-    return "$latitude, $longitude\n / Accuracy: $accuracy / time: $formattedTime"
+    return "$latitude, $longitude\n / Accuracy: $accuracy / time: $formattedTime \n\n"
 }
 
 fun LocationData.getFileNameToStore(): String {
