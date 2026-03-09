@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -70,6 +71,12 @@ fun HomeScreen() = FlorisScreen {
                 onClick = { InputMethodUtils.showImePicker(context) },
             )
         }
+
+        Text(
+            modifier = Modifier.padding(16.dp),
+            text = "Ничего лишнего. Только удобная клавиатура для вас."
+        ) // todo(now): change text
+
         Preference(
             icon = Icons.Default.Language,
             title = stringRes(R.string.settings__localization__title),

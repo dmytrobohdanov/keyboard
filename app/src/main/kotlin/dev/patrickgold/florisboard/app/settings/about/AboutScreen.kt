@@ -88,6 +88,9 @@ fun AboutScreen() = FlorisScreen {
             },
         )
 
-        Text("Клавиатура на базе Floris") // todo(now): change text
+        Text(
+            modifier = Modifier.padding(16.dp),
+            text = "Клавиатура на базе Floris"
+        ) // todo(now): change text
     }
 }
