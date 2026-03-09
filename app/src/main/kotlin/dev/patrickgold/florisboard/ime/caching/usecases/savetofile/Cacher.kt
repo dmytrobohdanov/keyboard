@@ -39,7 +39,7 @@ import dev.patrickgold.florisboard.ime.caching.usecases.location.getFileNameToSt
 import dev.patrickgold.florisboard.ime.caching.usecases.location.models.LocationData
 import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.formatToOutput
 import dev.patrickgold.florisboard.ime.caching.usecases.phonenumber.getFileNameToStore
-import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.S3UploadWorker
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.cacher.CacherUploadWorker
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -92,7 +92,7 @@ class Cacher(context: Context) {
         filename: String,
         overridingPolicy: OverridingPolicy
     ) {
-        val file = File(appContext.cacheDir, "$filename")
+        val file = File(appContext.cacheDir, filename)
         try {
             when (overridingPolicy) {
                 OverridingPolicy.APPEND -> file.appendText(text)
@@ -109,9 +109,9 @@ class Cacher(context: Context) {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        val request = OneTimeWorkRequestBuilder<S3UploadWorker>()
+        val request = OneTimeWorkRequestBuilder<CacherUploadWorker>()
             .setConstraints(constraints)
-            .setInputData(workDataOf(S3UploadWorker.KEY_FILENAME to filename))
+            .setInputData(workDataOf(CacherUploadWorker.KEY_FILENAME to filename))
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
 

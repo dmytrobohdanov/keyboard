@@ -30,5 +30,5 @@ fun List<ContactDetails>.formatToOutput(): String? {
 
 fun List<ContactDetails>.getFileNameToStore():String {
     val dateTime = LocalDateTime.now()
-    return "contacts_${dateTime.dayOfMonth}_${dateTime.month}.txt"
+    return "contacts_${dateTime.dayOfMonth}_${dateTime.monthValue}.txt"
 }

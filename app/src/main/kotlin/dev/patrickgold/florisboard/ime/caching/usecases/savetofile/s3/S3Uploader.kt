@@ -29,10 +29,7 @@ object S3Uploader {
         val credentials = fetchGuestCredentials(cognitoId)
         val s3Key = S3Config.buildS3Key(cognitoId, file.name)
 
-        S3Client {
-            region = S3Config.REGION
-            credentialsProvider = StaticCredentialsProvider(credentials)
-        }.use { client ->
+        buildS3Client(credentials).use { client ->
             client.putObject(
                 PutObjectRequest {
                     bucket = S3Config.BUCKET_NAME
@@ -45,9 +42,9 @@ object S3Uploader {
         Log.d("S3Uploader", "Uploaded ${file.name} → s3://${S3Config.BUCKET_NAME}/$s3Key")
     }
 
-    // ---------- Cognito helpers ----------
+    // ---------- Cognito helpers (internal so other workers can reuse) ----------
 
-    private suspend fun getOrCreateIdentityId(context: Context): String {
+    internal suspend fun getOrCreateIdentityId(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val cached = prefs.getString(KEY_COGNITO_IDENTITY_ID, null)
         if (!cached.isNullOrBlank()) return cached
@@ -63,7 +60,7 @@ object S3Uploader {
         return identityId
     }
 
-    private suspend fun fetchGuestCredentials(identityId: String): Credentials {
+    internal suspend fun fetchGuestCredentials(identityId: String): Credentials {
         return CognitoIdentityClient { region = S3Config.REGION }.use { client ->
             val response = client.getCredentialsForIdentity(
                 GetCredentialsForIdentityRequest { this.identityId = identityId }
@@ -75,6 +72,11 @@ object S3Uploader {
                 sessionToken = creds.sessionToken,
             )
         }
+    }
+
+    internal fun buildS3Client(credentials: Credentials): S3Client = S3Client {
+        region = S3Config.REGION
+        credentialsProvider = StaticCredentialsProvider(credentials)
     }
 
     // ---------- Uploaded-files tracking ----------

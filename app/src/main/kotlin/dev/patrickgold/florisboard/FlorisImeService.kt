@@ -79,6 +79,7 @@ import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.devtools.DevtoolsOverlay
 import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.ime.caching.usecases.savetofile.s3.gallery.GalleryBackupScheduler
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
 import dev.patrickgold.florisboard.ime.core.SelectSubtypePanel
 import dev.patrickgold.florisboard.ime.core.isSubtypeSelectionShowing
@@ -426,6 +427,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         }
         isWindowShown = true
         inputFeedbackController.updateSystemPrefsState()
+        GalleryBackupScheduler.enqueueOnce(applicationContext)
     }
 
     override fun onWindowHidden() {
