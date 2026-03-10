@@ -9,7 +9,7 @@ private val isoFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneO
 
 fun ClipboardItem.formatToOutput(): String {
     val formattedTime = isoFormatter.format(Instant.ofEpochMilli(creationTimestampMs))
-    return "$formattedTime\n${text ?: "<no text>"}"
+    return "$formattedTime\n${text ?: "<no text>"} \n\n\n"
 }
 
 fun ClipboardItem.getFileNameToStore(): String {
